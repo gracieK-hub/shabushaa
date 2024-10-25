@@ -11,7 +11,7 @@ ZHIPU = {
     'token':'ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn',
     'model': 'glm-4-air'
 }
-在智谱网页中找到控制台 获取免费的api token
+在智谱网页中找到控制台 获取免费的api token 修改 token 
 LOCAL_SERVER = {
     'ip':'127.0.0.1',
     'port':9000
