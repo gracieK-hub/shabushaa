@@ -1,4 +1,4 @@
-# 准备阶段 拥有 py3.11 
+# 准备阶段 拥有 py3.11 注册一个bigmodel开放平台账号 创建一个 api token
     cmd 执行 
     pip install paramiko sshtunnel
     pip install openai
@@ -6,6 +6,12 @@
     pip install protobuf==4.23.4 
 # 首先 备份一份要优化的项目
 # 其次 配置 config.py
+ZHIPU = {
+    'url':'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    'token':'ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn',
+    'model': 'glm-4-air'
+}
+在智谱网页中找到控制台 获取免费的api token
 LOCAL_SERVER = {
     'ip':'127.0.0.1',
     'port':9000
