@@ -1,12 +1,11 @@
 import os
-
 import requests
-
 import ai_response
 import config
 
 SONAR_API_BASE_URL = f"http://{config.LOCAL_SERVER['ip']}:{config.LOCAL_SERVER['port']}"
 
+# 获取远端服务的扫描结果
 def get_scan_results():
     url = f"{SONAR_API_BASE_URL}/api/issues/search"
     page = 1
@@ -19,10 +18,11 @@ def get_scan_results():
             's': 'FILE_LINE',
             'resolved': 'false',
             # 'severities': 'BLOCKER,CRITICAL,MAJOR,MINOR',
+            'types': 'BUG',
             'ps': ps,
             'p': page,
-            # 'facets': 'owaspTop10,sansTop25,severities,sonarsourceSecurity,types',
-            'facets': 'owaspTop10,sansTop25,severities,sonarsourceSecurity,types,scopes,resolutions',
+            'facets': 'owaspTop10,sansTop25,severities,sonarsourceSecurity,types',
+            # 'facets': 'owaspTop10,sansTop25,severities,sonarsourceSecurity,types,scopes,resolutions',
             'additionalFields': '_all',
             'timeZone': 'Asia/Shanghai'
         }
@@ -40,6 +40,7 @@ def get_scan_results():
 
     return all_issues
 
+# 扫描本地的文件
 def scan_local_repo():
     path = config.PROJECT_INFO['local_path']
     java_files = []
@@ -50,6 +51,7 @@ def scan_local_repo():
                 java_files.append(os.path.abspath(file_path))
     return java_files
 
+# 服务端sonar结果去重 返回的就是代码文件的路径
 def get_issues():
     issues = get_scan_results()
     if not issues:
@@ -64,6 +66,7 @@ def get_issues():
     print(f"去重后, 总共有: {len(dist_issue)}")
     return dist_issue
 
+# 将ai修改的文件写回去
 def ai_modify():
     # 项目路径
     prefix_path = config.PROJECT_INFO['local_path_prefix']
@@ -82,6 +85,7 @@ def ai_modify():
             with open(edit_path, 'w', encoding='utf-8') as file:
                 file.write('\n'.join(filtered_lines))
 
+# 如果只加注释用这个方法
 def ai_modify_only_comment_line():
     local_file = scan_local_repo()
     for ele in local_file:
@@ -97,6 +101,26 @@ def ai_modify_only_comment_line():
             with open(ele, 'w', encoding='utf-8') as file:
                 file.write('\n'.join(filtered_lines))
 
+def ai_modify_junit_test():
+    path = config.PROJECT_INFO['local_path']
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(".java"):
+                file_path = os.path.join(root, file)
+                if not any(keyword in file for keyword in ['Controller', 'Service', 'Action', 'Mapper']):
+                    file_abspath = os.path.abspath(file_path)
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                    print("本地类: " + file_abspath)
+                    write_java_str = ai_response.ai_write_junit_test(content)
+                    filtered_lines = [line for line in write_java_str.splitlines() if '```java' not in line and '```' not in line]
+                    final = file_abspath.replace('\src\main\java', '\src\\test\java').replace('.java', 'Test.java')
+                    print("生成的测试类: " + final)
+                    directory = os.path.dirname(final)
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+                    with open(final, 'w', encoding='utf-8') as file:
+                        file.write('\n'.join(filtered_lines))
+
 if __name__ == '__main__':
-    for ele in scan_local_repo():
-        print(ele)
+    ai_modify_junit_test()
