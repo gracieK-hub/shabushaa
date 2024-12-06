@@ -17,8 +17,8 @@ def get_scan_results():
             'componentKeys': config.PROJECT_INFO['key'],
             's': 'FILE_LINE',
             'resolved': 'false',
-            # 'severities': 'BLOCKER,CRITICAL,MAJOR,MINOR',
-            'types': 'BUG',
+            'severities': 'CRITICAL,MAJOR',
+            # 'types': 'BUG',
             'ps': ps,
             'p': page,
             'facets': 'owaspTop10,sansTop25,severities,sonarsourceSecurity,types',
@@ -113,6 +113,7 @@ def ai_modify_junit_test():
                         content = file.read()
                     print("本地类: " + file_abspath)
                     write_java_str = ai_response.ai_write_junit_test(content)
+                    # write_java_str = ai_response.ai_learn_writing_code_and_write_junit_test(file_path)
                     filtered_lines = [line for line in write_java_str.splitlines() if '```java' not in line and '```' not in line]
                     final = file_abspath.replace('\src\main\java', '\src\\test\java').replace('.java', 'Test.java')
                     print("生成的测试类: " + final)

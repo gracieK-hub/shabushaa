@@ -1,12 +1,8 @@
+import os
 import requests
 import config
+
 from datetime import datetime
-
-
-# 将上述代码用sonar严格规则扫描之后,
-#                 优化代码sonar优先级：[BLOCKER, CRITICAL, MAJOR] 三个级别,
-#                 添加详细的中文注释提高注释率, 删除无效代码和无效引用. 注意你返回的结果要包含全部代码,
-#                 不要省略掉任何代码, 原来的代码不能被删除或者省略, 不能写: ... (省略其他方法以节省空间), 要全部返回给我, 不能因为你优化之后我无法使用了, 不要添加多余的描述###之类的, 只返回给我代码, 不要你额外的解释, 只返回给我代码.
 
 def get_ai_response(prompt):
     url = config.ZHIPU["url"]
@@ -32,63 +28,117 @@ def get_ai_response(prompt):
 
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
-        response_data = response.json()["choices"][0]["message"]["ontent"]
+        response_data = response.json()["choices"][0]["message"]["content"]
         return response_data
     else:
         return "Error: " + response.text
-
 
 def ai_write_junit_test(prompt):
     url = config.ZHIPU["url"]
     current_timestamp = datetime.now().timestamp()
 
-    messages = [
-        {
-            "role": "user",
-            "content": f"""{prompt}
-                    覆盖上述代码的所有方法, 用junit4框架, 用mock模拟操作数据库的操作, mock所有可能连接外部资源获取数据的数据, 写测试类, 只返回给我代码不要写额外的描述, 保证我直接可用
-                    """
-        }
-    ]
     headers = {
         "Authorization": config.ZHIPU["token"],
         "Content-Type": "application/json"
     }
+    messages = [
+        {
+            "role": "user",
+            "content": f"""{prompt}
+                            需求:根据上述代码写单元测试类,测试类要保证通过率为100%,
+                            用'junit4'框架,
+                            用'@RunWith(SpringRunner.class)'注解,用'org.junit.Assert'判断参数,别忘记写'package',不要忽略任何的'import',比如'import org.junit.Test',
+                            不使用'@SpringBootTest'注解,不使用'@InjectMocks'注解,不使用'(expected = Exception.class)'注解参数,
+                            利用反射使用所有的函数和类属性,使用'throws Exception'抛出所有的异常,使用'method.setAccessible(true);'设置方法访问控制,然后强转反射函数的返回值.
+                            只返回给我代码不要写额外的描述,保证我直接可用.
+                            """
+        }
+    ]
     data = {
         "model": config.ZHIPU["model"],
         "max_tokens": 4096,
-        "system_prompt": "你是一个代码助手, 非常善于解决代码为听",
+        # "system_prompt": "书写测试单元类 用 @RunWith(SpringRunner.class) 注解",
         "customerId": f"${current_timestamp}",
         "messages": messages
     }
 
     response = requests.post(url, headers=headers, json=data)
-    print(response.text)
     if response.status_code == 200:
-        response_data = response.json()["choices"][0]["message"]
+        response_data = response.json()["choices"][0]["message"]["content"]
+        print(response_data)
+        return response_data
     else:
         return "Error: " + response.text
 
-    user_callback_mes = {
-            "role": "user",
-            "content": "重新写一下"
-        }
-    messages.append(response_data)
-    messages.append(user_callback_mes)
 
-    data2 = {
-        "model": config.ZHIPU["model"],
+def ai_learn_writing_code_and_write_junit_test(file_path):
+    url = config.ZHIPU["url"]
+    current_timestamp = datetime.now().timestamp()
+    # 获取当前工作目录
+    current_directory = os.getcwd() + "\\template"
+    token = config.ZHIPU["token"]
+    model = config.ZHIPU["model"]
+
+    headers = {
+        "Authorization": token,
+        "Content-Type": "application/json"
+    }
+    messages = [
+        {
+            "role": "user",
+            "content": f"""
+                    需求: 你将要学习一些java的代码, 代码的内容是junit的测试模板代码, 学会注解使用, 学会模拟数据, 学习测试代码的书写风格
+                    """
+        }
+    ]
+    data = {
+        "model": model,
         "max_tokens": 4096,
-        "system_prompt": "你是一个代码助手, 非常善于解决代码问题",
+        # "system_prompt": "你是一个java高级开发工程师, 非常擅长分析代码, 不会遗漏代码的细节, 只用代码和代码注释回答问题.",
         "customerId": f"${current_timestamp}",
         "messages": messages
     }
-    response2 = requests.post(url, headers=headers, json=data2)
-    print(response2.text)
 
+    # 获取当前目录下所有文件的完整路径
+    all_file_paths = [os.path.join(current_directory, f) for f in os.listdir(current_directory) if
+                      os.path.isfile(os.path.join(current_directory, f))]
+    for all_file_path in all_file_paths:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            response_data = response.json()["choices"][0]["message"]
+            print(response_data["content"])
+        else:
+            return "Error: " + response.text
+
+        with open(all_file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+        user_callback_mes = {
+            "role": "user",
+            "content": content
+        }
+        messages.append(response_data)
+        messages.append(user_callback_mes)
+
+    # 学习结束 开始写一个测试类
+    with open(file_path, "r", encoding="utf-8") as file:
+        content = file.read()
+    user_callback_mes = {
+        "role": "user",
+        "content": f"""${content}
+             需求: 上述代码的所有方法, 用junit4框架, 用mock模拟操作数据库的操作, mock所有可能连接外部资源获取数据的数据, 写测试类, 只返回给我代码不要写额外的描述, 保证我直接可用
+            """
+    }
+    messages.append(user_callback_mes)
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        response_data = response.json()["choices"][0]["message"]["content"]
+        print(response_data)
+        return response_data
+    else:
+        return "Error: " + response.text
 
 if __name__ == "__main__":
-    target_file = r"D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service\src\main\java\com\unitechs\cas\sysmanager\service\RoleTypeAttackNetService.java"
+    target_file = r"D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service-interface\src\main\java\com\unitechs\cas\rpc\resp\ManagerObjResp.java"
     with open(target_file, "r", encoding="utf-8") as file:
         content = file.read()
     ai_write_junit_test(content)

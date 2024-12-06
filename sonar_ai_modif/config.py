@@ -19,14 +19,10 @@ LOCAL_SERVER = {
 }
 
 PROJECT_INFO = {
-    'key':'cnv-front-schedule-java-service-develop',
-    'token':'0d4784d7430dae414d7b9365149285f29150d9ca',
-    # 'local_path':'D:\ideaCode\company\gitCode\\buckup\cnv-front-schedule-java-service\\src\main\java\\',
-    # 'local_path':'D:\ideaCode\company\gitCode\sonarCode\cnv-front-gateway-java-service\\src\main\java\\',
+    'key': 'cnv-front-schedule-java-service-develop',
+    'token': '0d4784d7430dae414d7b9365149285f29150d9ca',
     'local_path': r'D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service\src\main\java',
-    # 'local_path_prefix': 'D:\ideaCode\company\gitCode\\buckup\cnv-front-schedule-java-service\\'
-    # 'local_path_prefix': 'D:\ideaCode\company\gitCode\sonarCode\cnv-front-gateway-java-service'
-    'local_path_prefix': 'D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service'
+    'local_path_prefix': 'D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service-interface'
 }
 
 ZHIPU = {
