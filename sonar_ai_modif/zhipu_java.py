@@ -3,6 +3,23 @@ import os
 import requests
 import yaml
 
+
+def ai_writing_annotation(class_content, class_path, zhipu_url, headers, data):
+    data['messages'].append({
+                "role": "user",
+                "content": f"""{class_content}
+                将上述代码添加丰富的中文注释, 代码注释率要达到90%以上, 不要省略掉任何代码, 不要遗漏任何一行代码, 我需要直接编译, 原来的代码不能被删除或者省略, 
+                只返回给我代码, 不要你额外的解释, 只返回给我代码.
+                """
+            })
+    response = requests.post(zhipu_url, headers=headers, json=data)
+    response_data = response.json()["choices"][0]["message"]["content"]
+    filtered_lines = [line for line in response_data.splitlines() if '```java' not in line and '```' not in line]
+    with open(class_path, 'w', encoding='utf-8') as file:
+        file.write('\n'.join(filtered_lines))
+    data['messages'].clear()
+
+
 def ai_learn_writing_code_and_write_junit_test():
     config = get_config()
     zhipu_url = config['ZHIPU']['url']
@@ -26,7 +43,8 @@ def ai_learn_writing_code_and_write_junit_test():
         if len(class_content) > 4000:
             print(f'文件内容超过4000,跳过: {class_path}')
             continue
-        need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list)
+        ai_writing_annotation(class_content, class_path, zhipu_url, headers, data)
+        need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         messages.clear()
         if len(need_upload_file_list) > 0:
             for need_upload_file in need_upload_file_list:
@@ -46,15 +64,47 @@ def ai_learn_writing_code_and_write_junit_test():
                     print(f'Error: {ai_need_class_callback.text}')
                     continue
                 messages.append(ai_need_class_callback_data)
-        messages.append({
-            "role": "user",
-            "content": f"""{class_content}
-            需求:根据上述代码写单元测试类，
-            用 junit4 框架，通过模拟外部服务层的调用来测试。通过确保 HTTP 请求和响应的状态、错误消息和数据返回的正确性，确保测试覆盖率和通过率为 100%。
-            别忘记写 package，实体类不需要mock简单测试覆盖
-            只返回给我代码不要写额外的描述，保证我直接可用。
-            """
-        })
+        if class_path.endswith('Controller.java') or class_path.endswith('Action.java'):
+            messages.append({
+                "role": "user",
+                "content": f"""{class_content}
+                            需求:根据上述代码写单元测试类，
+                            用 junit4 框架，Controller类编写JUnit 4单元测试，我们需要模拟其依赖的服务层 Service 以及可能用到的其他组件，
+                            别忘记写 package，
+                            只返回给我代码不要写额外的描述，保证我直接可用。
+                            """
+            })
+        elif class_path.endswith('Service.java') or class_path.endswith('ServiceImpl.java'):
+            messages.append({
+                "role": "user",
+                "content": f"""{class_content}
+                            需求:根据上述代码写单元测试类，
+                            用 junit4 框架，Service类编写单元测试，我们需要使用 Mockito 模拟其依赖的Mapper或者其他Service。
+                            别忘记写 package，
+                            只返回给我代码不要写额外的描述，保证我直接可用。
+                            """
+            })
+        elif class_path.endswith('Mapper.java') or class_path.endswith('Dao.java'):
+            messages.append({
+                "role": "user",
+                "content": f"""{class_content}
+                            需求:根据上述代码写单元测试类，
+                            用 junit4 框架，为了编写Mapper的单元测试，我们需要使用Mockito来模拟MyBatis的Mapper接口。
+                            由于Mapper接口本身不包含业务逻辑，单元测试的主要目的是验证接口方法是否被正确调用，以及调用时是否传递了正确的参数。
+                            别忘记写 package，
+                            只返回给我代码不要写额外的描述，保证我直接可用。
+                            """
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": f"""{class_content}
+                            需求:根据上述代码写单元测试类，
+                            用 junit4 框架，编写单元测试，可能需要使用Mockito来模拟其他相关的接口。
+                            别忘记写 package，实体类不需要mock，我们需要验证类的属性是否正确设置和获取，
+                            只返回给我代码不要写额外的描述，保证我直接可用。
+                            """
+            })
         response = requests.post(zhipu_url, headers=headers, json=data)
         if response.status_code == 200:
             response_data = response.json()['choices'][0]['message']['content']
@@ -70,9 +120,14 @@ def ai_learn_writing_code_and_write_junit_test():
         with open(final, 'w', encoding='utf-8') as file:
             file.write('\n'.join(filter_lines))
 
-def check_file_content_get_import_java_path(content, class_list):
+def check_file_content_get_import_java_path(content, class_list, class_path):
     import_java_file_list = check_java_import(content)
     need_upload_file_list = []
+    if class_path.endswith('Controller.java'):
+        print(f'当前类是Controller类,需要上传基础类')
+        current_directory = os.getcwd() + "\\ControllerNeed"
+        all_file_paths = [os.path.join(current_directory, f) for f in os.listdir(current_directory) if os.path.isfile(os.path.join(current_directory, f))]
+        need_upload_file_list = all_file_paths
     for need_upload in class_list:
         for import_java_file in import_java_file_list:
             need_upload_classname = need_upload.split('\\')[-1].replace('.java', '')
