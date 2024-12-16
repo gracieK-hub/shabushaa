@@ -1,5 +1,7 @@
 import os
 import requests
+import yaml
+
 import config
 
 from datetime import datetime
@@ -70,6 +72,10 @@ def ai_write_junit_test(prompt):
     else:
         return "Error: " + response.text
 
+def get_config():
+    with open('config.yaml', 'r', encoding='utf-8') as file:
+        config = yaml.safe_load(file)
+    return config
 
 def ai_learn_writing_code_and_write_junit_test(file_path):
     url = config.ZHIPU["url"]
@@ -94,7 +100,6 @@ def ai_learn_writing_code_and_write_junit_test(file_path):
     data = {
         "model": model,
         "max_tokens": 4096,
-        # "system_prompt": "你是一个java高级开发工程师, 非常擅长分析代码, 不会遗漏代码的细节, 只用代码和代码注释回答问题.",
         "customerId": f"${current_timestamp}",
         "messages": messages
     }
@@ -138,7 +143,8 @@ def ai_learn_writing_code_and_write_junit_test(file_path):
         return "Error: " + response.text
 
 if __name__ == "__main__":
-    target_file = r"D:\ideaCode\company\gitCode\sonarCode\cnv-front-cas-java-service-interface\src\main\java\com\unitechs\cas\rpc\resp\ManagerObjResp.java"
+    target_file = r"D:\ideaCode\company\gitCode\sonarCode\cnv-front-schedule-java-service\src\main\java\com\unitechs\common\util\CirFluxRedisUtils.java"
     with open(target_file, "r", encoding="utf-8") as file:
         content = file.read()
-    ai_write_junit_test(content)
+    # 代码语言类型为java，需要用到的测试框架为junit4
+    print(len(content))

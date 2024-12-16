@@ -3,8 +3,7 @@ import os
 import requests
 import yaml
 
-
-def ai_writing_annotation(class_content, class_path, zhipu_url, headers, data):
+def ai_writing_comments(class_content, class_path, zhipu_url, headers, data):
     data['messages'].append({
                 "role": "user",
                 "content": f"""{class_content}
@@ -13,18 +12,28 @@ def ai_writing_annotation(class_content, class_path, zhipu_url, headers, data):
                 """
             })
     response = requests.post(zhipu_url, headers=headers, json=data)
-    response_data = response.json()["choices"][0]["message"]["content"]
-    filtered_lines = [line for line in response_data.splitlines() if '```java' not in line and '```' not in line]
+    response_data = substring_between_two_strings(response.json()["choices"][0]["message"]["content"], "```java", "```")
     with open(class_path, 'w', encoding='utf-8') as file:
-        file.write('\n'.join(filtered_lines))
+        file.write(response_data)
     data['messages'].clear()
 
+def check_entity_class_path(class_path):
+    keywords = ['entity', 'req', 'resp', 'model']
+    class_path_constitute_check = class_path.split(os.path.sep)
+    for keyword in keywords:
+        for part in class_path_constitute_check:
+            if keyword == part:
+                return True
+            else:
+                return False
 
 def ai_learn_writing_code_and_write_junit_test():
     config = get_config()
     zhipu_url = config['ZHIPU']['url']
     zhipu_token = config['ZHIPU']['token']
     zhipu_model = config['ZHIPU']['model']
+    zhipu_language = config['PROJECT_INFO']['language']
+    zhipu_framework = config['PROJECT_INFO']['test_framework']
     headers = {
         "Authorization": zhipu_token,
         "Content-Type": "application/json"
@@ -33,24 +42,26 @@ def ai_learn_writing_code_and_write_junit_test():
     data = {
         "model": zhipu_model,
         "max_tokens": 4096,
-        "system_prompt": "java编程语言",
         "messages": messages
     }
     class_list = scan_local_get_java_file_path()
     for class_path in class_list:
         print(f'开始处理文件: {class_path}')
         class_content = get_file_content(class_path)
-        if len(class_content) > 4000:
-            print(f'文件内容超过4000,跳过: {class_path}')
+        if len(class_content) > 6000:
+            print(f'文件内容超过6000,跳过: {class_path}')
             continue
-        ai_writing_annotation(class_content, class_path, zhipu_url, headers, data)
+        ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
+        if check_entity_class_path(class_path):
+            print(f'该类是实体类,跳过: {class_path}')
+            continue
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         messages.clear()
         if len(need_upload_file_list) > 0:
             for need_upload_file in need_upload_file_list:
                 ai_need_class_content = get_file_content(need_upload_file)
-                if len(ai_need_class_content) > 4000:
-                    print(f'文件内容超过4000,跳过: {need_upload_file}')
+                if len(ai_need_class_content) > 9000:
+                    print(f'文件内容超过9000,跳过: {need_upload_file}')
                     continue
                 print(f'需要上传文件: {need_upload_file}')
                 messages.append({
@@ -68,9 +79,10 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:根据上述代码写单元测试类，
-                            用 junit4 框架，Controller类编写JUnit 4单元测试，我们需要模拟其依赖的服务层 Service 以及可能用到的其他组件，
-                            别忘记写 package，
+                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，Controller类编写JUnit 4单元测试，我们需要模拟其依赖的服务层 Service 以及可能用到的其他组件，
+                            要代码覆盖率非常高的写法，用try-catch包裹代码保证运行通过。
+                            只返回给我代码不要写额外的描述，保证我直接可用。
+                            别写错 package，
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
@@ -78,9 +90,9 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:根据上述代码写单元测试类，
-                            用 junit4 框架，Service类编写单元测试，我们需要使用 Mockito 模拟其依赖的Mapper或者其他Service。
-                            别忘记写 package，
+                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
+                            Service类编写单元测试，我们需要使用 Mockito 模拟其依赖的Mapper或者其他Service。
+                            别写错 package，
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
@@ -88,10 +100,10 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:根据上述代码写单元测试类，
-                            用 junit4 框架，为了编写Mapper的单元测试，我们需要使用Mockito来模拟MyBatis的Mapper接口。
+                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
+                            为了编写Mapper的单元测试，我们需要使用Mockito来模拟MyBatis的Mapper接口。
                             由于Mapper接口本身不包含业务逻辑，单元测试的主要目的是验证接口方法是否被正确调用，以及调用时是否传递了正确的参数。
-                            别忘记写 package，
+                            别写错 package，
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
@@ -99,26 +111,26 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:根据上述代码写单元测试类，
-                            用 junit4 框架，编写单元测试，可能需要使用Mockito来模拟其他相关的接口。
-                            别忘记写 package，实体类不需要mock，我们需要验证类的属性是否正确设置和获取，
+                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
+                            可能需要使用Mockito来模拟其他相关的接口。
+                            别写错 package，实体类不需要mock，我们需要验证类的属性是否正确设置和获取，
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
         response = requests.post(zhipu_url, headers=headers, json=data)
         if response.status_code == 200:
-            response_data = response.json()['choices'][0]['message']['content']
+            response_data = substring_between_two_strings(response.json()['choices'][0]['message']['content'], "```java", "```")
         else:
             print("Error: " + response.text)
             continue
-        filter_lines = [line for line in response_data.splitlines() if '```java' not in line and '```' not in line]
+        # filter_lines = [line for line in response_data.splitlines()]
         final = class_path.replace('\src\main\java', '\src\\test\java').replace('.java', 'Test.java')
         print(f'生成的测试类: {final}')
         directory = os.path.dirname(final)
         if not os.path.exists(directory):
             os.makedirs(directory)
         with open(final, 'w', encoding='utf-8') as file:
-            file.write('\n'.join(filter_lines))
+            file.write(response_data)
 
 def check_file_content_get_import_java_path(content, class_list, class_path):
     import_java_file_list = check_java_import(content)
@@ -173,6 +185,12 @@ def check_java_import(content):
         import_classname_list.append(classname)
     print(f'import_classname_list: {import_classname_list}')
     return import_classname_list
+
+def substring_between_two_strings(content, start, end):
+    start_index = content.find(start) + len(start)
+    end_index = content.find(end, start_index)
+    result = content[start_index:end_index]
+    return result
 
 if __name__ == '__main__':
     ai_learn_writing_code_and_write_junit_test()

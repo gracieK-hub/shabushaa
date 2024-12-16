@@ -17,9 +17,12 @@ LOCAL_SERVER:
 PROJECT_INFO:
   key: "cnv-front-schedule-java-service-develop"
   token: "0d4784d7430dae414d7b9365149285f29150d9ca"
-  local_path: "D:\\ideaCode\\company\\gitCode\\sonarCode\\cnv-front-cas-java-service"
+  local_path: "D:\\ideaCode\\company\\gitCode\\sonarCode\\cnv-front-schedule-java-service"
+  language: "java"
+  test_framework: "junit4"
 
 ZHIPU:
   url: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-  token: "ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn"
-  model: "glm-4-air"
+#  token: "ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn"
+  token: "9b6463e98835a6cc82cfffb01d823d06.UCRDbjHYqHMaJfr5"
+  model: "glm-4-plus"
