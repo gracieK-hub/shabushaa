@@ -12,7 +12,7 @@ def ai_writing_comments(class_content, class_path, zhipu_url, headers, data):
                 """
             })
     response = requests.post(zhipu_url, headers=headers, json=data)
-    response_data = substring_between_two_strings(response.json()["choices"][0]["message"]["content"], "```java", "```")
+    response_data = substring_between_two_strings(response.json()["choices"][0]["message"]["content"], '```java\n', '```')
     with open(class_path, 'w', encoding='utf-8') as file:
         file.write(response_data)
     data['messages'].clear()
@@ -49,11 +49,11 @@ def ai_learn_writing_code_and_write_junit_test():
         print(f'开始处理文件: {class_path}')
         class_content = get_file_content(class_path)
         if len(class_content) > 6000:
-            print(f'文件内容超过6000,跳过: {class_path}')
+            print(f'文件内容超过6000, 跳过: {class_path}')
             continue
         ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
         if check_entity_class_path(class_path):
-            print(f'该类是实体类,跳过: {class_path}')
+            print(f'该类是实体类, 跳过: {class_path}')
             continue
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         messages.clear()
@@ -79,10 +79,10 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，Controller类编写JUnit 4单元测试，我们需要模拟其依赖的服务层 Service 以及可能用到的其他组件，
-                            要代码覆盖率非常高的写法，用try-catch包裹代码保证运行通过。
-                            只返回给我代码不要写额外的描述，保证我直接可用。
-                            别写错 package，
+                            需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。
+                            使用{zhipu_framework}框架，测试应包括以下方面：请求映射的正确性、参数验证、返回结果验证以及异常处理。
+                            提供必要的测试数据和断言，以验证Controller的行为符合预期。用try-cache包裹代码保证运行通过。
+                            编写清晰、简洁、可维护的测试代码。提供必要的测试数据和断言，以便验证代码的正确性和稳定性。
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
@@ -90,7 +90,8 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
+                            需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
+                            使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
                             Service类编写单元测试，我们需要使用 Mockito 模拟其依赖的Mapper或者其他Service。
                             别写错 package，
                             只返回给我代码不要写额外的描述，保证我直接可用。
@@ -100,7 +101,8 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
+                            需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
+                            使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
                             为了编写Mapper的单元测试，我们需要使用Mockito来模拟MyBatis的Mapper接口。
                             由于Mapper接口本身不包含业务逻辑，单元测试的主要目的是验证接口方法是否被正确调用，以及调用时是否传递了正确的参数。
                             别写错 package，
@@ -111,15 +113,15 @@ def ai_learn_writing_code_and_write_junit_test():
             messages.append({
                 "role": "user",
                 "content": f"""{class_content}
-                            需求:代码语言类型为{zhipu_language}，需要用到的框架为{zhipu_framework}，
-                            可能需要使用Mockito来模拟其他相关的接口。
-                            别写错 package，实体类不需要mock，我们需要验证类的属性是否正确设置和获取，
+                            需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
+                            使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
+                            编写清晰、简洁、可维护的测试代码。提供必要的测试数据和断言，以便验证代码的正确性和稳定性。
                             只返回给我代码不要写额外的描述，保证我直接可用。
                             """
             })
         response = requests.post(zhipu_url, headers=headers, json=data)
         if response.status_code == 200:
-            response_data = substring_between_two_strings(response.json()['choices'][0]['message']['content'], "```java", "```")
+            response_data = substring_between_two_strings(response.json()['choices'][0]['message']['content'], "```java\n", "```")
         else:
             print("Error: " + response.text)
             continue
