@@ -54,11 +54,11 @@ def ai_optimize_code(class_content, class_path, zhipu_url, headers, data):
                     只返回给我代码不要写额外的描述，不要写错代码，保证我直接可用。
                     """
     })
-    response = requests.post(zhipu_url, headers=headers, json=data)
-    if response.status_code == 200:
-        ai_code = substring_between_two_strings(response.json()["choices"][0]["message"]["content"], '```java\n','```')
+    response_final = requests.post(zhipu_url, headers=headers, json=data)
+    if response_final.status_code == 200:
+        ai_code = substring_between_two_strings(response_final.json()["choices"][0]["message"]["content"], '```java\n','```')
     else:
-        print(f'optimize Error: {response.text}')
+        print(f'optimize Error: {response_final.text}')
         return
     with open(class_path, 'w', encoding='utf-8') as file:
         file.write(ai_code)
@@ -98,10 +98,11 @@ def ai_learn_writing_code_and_write_junit_test():
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         data['model'] = zhipu_model1
         class_content_optimize = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
-        print(f'优化完成为优化后的代码写注释')
+        print(f'优化完成, 为优化后的代码写注释')
         data['model'] = zhipu_model2
         ai_writing_comments(class_content_optimize, class_path, zhipu_url, headers, data)
         messages.clear()
+        print(f'开始写单元测试')
         data['model'] = zhipu_model1
         if len(need_upload_file_list) > 0:
             for need_upload_file in need_upload_file_list:
@@ -124,7 +125,7 @@ def ai_learn_writing_code_and_write_junit_test():
         if class_path.endswith('Controller.java') or class_path.endswith('Action.java'):
             messages.append({
                 "role": "user",
-                "content": f"""{class_content}
+                "content": f"""{class_content_optimize}
                             需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。
                             使用{zhipu_framework}框架，测试应包括以下方面：请求映射的正确性、参数验证、返回结果验证以及异常处理。
                             提供必要的测试数据和断言，以验证Controller的行为符合预期。用try-cache包裹代码保证运行通过。
@@ -135,7 +136,7 @@ def ai_learn_writing_code_and_write_junit_test():
         elif class_path.endswith('Service.java') or class_path.endswith('ServiceImpl.java'):
             messages.append({
                 "role": "user",
-                "content": f"""{class_content}
+                "content": f"""{class_content_optimize}
                             需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
                             使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
                             Service类编写单元测试，我们需要使用 Mockito 模拟其依赖的Mapper或者其他Service。
@@ -146,7 +147,7 @@ def ai_learn_writing_code_and_write_junit_test():
         elif class_path.endswith('Mapper.java') or class_path.endswith('Dao.java'):
             messages.append({
                 "role": "user",
-                "content": f"""{class_content}
+                "content": f"""{class_content_optimize}
                             需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
                             使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
                             为了编写Mapper的单元测试，我们需要使用Mockito来模拟MyBatis的Mapper接口。
@@ -158,7 +159,7 @@ def ai_learn_writing_code_and_write_junit_test():
         else:
             messages.append({
                 "role": "user",
-                "content": f"""{class_content}
+                "content": f"""{class_content_optimize}
                             需求:请为上述{zhipu_language}编写单元测试，要覆盖率很高的写法。重点关注核心功能、边界条件和异常情况。
                             使用{zhipu_framework}框架，遵循 Arrange-Act-Assert 模式，用try-cache包裹代码保证运行通过。
                             编写清晰、简洁、可维护的测试代码。提供必要的测试数据和断言，以便验证代码的正确性和稳定性。
