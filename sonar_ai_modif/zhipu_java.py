@@ -188,7 +188,7 @@ def ai_learn_writing_code_and_write_junit_test():
 def check_file_content_get_import_java_path(content, class_list, class_path):
     import_java_file_list = check_java_import(content)
     need_upload_file_list = []
-    if class_path.endswith('Controller.java'):
+    if class_path.endswith('Controller.java') or class_path.endswith('Action.java'):
         print(f'当前类是Controller类,需要上传基础类')
         current_directory = os.getcwd() + "\\ControllerNeed"
         all_file_paths = [os.path.join(current_directory, f) for f in os.listdir(current_directory) if os.path.isfile(os.path.join(current_directory, f))]
