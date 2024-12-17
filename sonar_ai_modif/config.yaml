@@ -25,4 +25,5 @@ ZHIPU:
   url: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 #  token: "ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn"
   token: "9b6463e98835a6cc82cfffb01d823d06.UCRDbjHYqHMaJfr5"
-  model: "glm-4-plus"
+  model1: "glm-4-plus"
+  model2: "glm-4-air"

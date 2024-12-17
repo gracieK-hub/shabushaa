@@ -4,6 +4,7 @@ import requests
 import yaml
 
 def ai_writing_comments(class_content, class_path, zhipu_url, headers, data):
+    print(f'开始添加注释: {class_path}')
     data['messages'].append({
                 "role": "user",
                 "content": f"""{class_content}
@@ -27,11 +28,45 @@ def check_entity_class_path(class_path):
             else:
                 return False
 
+
+def ai_optimize_code(class_content, class_path, zhipu_url, headers, data):
+    print(f'开始优化代码: {class_path}')
+    data['messages'].append({
+        "role": "user",
+        "content": f"""{class_content}
+                    需求：对上述代码给出优化建议，以提高其性能、可读性和维护性。关注点包括：减少冗余代码、改进算法复杂度、使用更高效的数据结构、遵循最佳实践和编码规范。
+                    """
+    })
+    response = requests.post(zhipu_url, headers=headers, json=data)
+    if response.status_code == 200:
+        ai_callback_message = response.json()['choices'][0]['message']
+    else:
+        print(f'optimize Error: {response.text}')
+        return
+    data['messages'].append(ai_callback_message)
+    data['messages'].append({
+        "role": "user",
+        "content": f"""{class_content}
+                    需求：根据你给的优化建议，优化我发的代码，
+                    只返回给我代码不要写额外的描述，保证我直接可用。
+                    """
+    })
+    response = requests.post(zhipu_url, headers=headers, json=data)
+    if response.status_code == 200:
+        ai_code = substring_between_two_strings(response.json()["choices"][0]["message"]["content"], '```java\n','```')
+    else:
+        print(f'optimize Error: {response.text}')
+        return
+    with open(class_path, 'w', encoding='utf-8') as file:
+        file.write(ai_code)
+    data['messages'].clear()
+
 def ai_learn_writing_code_and_write_junit_test():
     config = get_config()
     zhipu_url = config['ZHIPU']['url']
     zhipu_token = config['ZHIPU']['token']
-    zhipu_model = config['ZHIPU']['model']
+    zhipu_model1 = config['ZHIPU']['model1']
+    zhipu_model2 = config['ZHIPU']['model2']
     zhipu_language = config['PROJECT_INFO']['language']
     zhipu_framework = config['PROJECT_INFO']['test_framework']
     headers = {
@@ -40,7 +75,7 @@ def ai_learn_writing_code_and_write_junit_test():
     }
     messages = []
     data = {
-        "model": zhipu_model,
+        "model": None,
         "max_tokens": 4096,
         "messages": messages
     }
@@ -51,12 +86,16 @@ def ai_learn_writing_code_and_write_junit_test():
         if len(class_content) > 6000:
             print(f'文件内容超过6000, 跳过: {class_path}')
             continue
+        data['model'] = zhipu_model2
         ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
         if check_entity_class_path(class_path):
             print(f'该类是实体类, 跳过: {class_path}')
             continue
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
+        data['model'] = zhipu_model2
+        class_content = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
         messages.clear()
+        data['model'] = zhipu_model1
         if len(need_upload_file_list) > 0:
             for need_upload_file in need_upload_file_list:
                 ai_need_class_content = get_file_content(need_upload_file)
@@ -121,7 +160,11 @@ def ai_learn_writing_code_and_write_junit_test():
             })
         response = requests.post(zhipu_url, headers=headers, json=data)
         if response.status_code == 200:
-            response_data = substring_between_two_strings(response.json()['choices'][0]['message']['content'], "```java\n", "```")
+            try:
+                response_data = substring_between_two_strings(response.json()['choices'][0]['message']['content'], "```java\n", "```")
+            except:
+                print("Error: " + response.text)
+                continue
         else:
             print("Error: " + response.text)
             continue
