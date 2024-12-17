@@ -31,10 +31,12 @@ def check_entity_class_path(class_path):
 
 def ai_optimize_code(class_content, class_path, zhipu_url, headers, data):
     print(f'开始优化代码: {class_path}')
+    config = get_config()
+    language = config['PROJECT_INFO']['language']
     data['messages'].append({
         "role": "user",
         "content": f"""{class_content}
-                    需求：对上述代码给出优化建议，以提高其性能、可读性和维护性。关注点包括：减少冗余代码、改进算法复杂度、使用更高效的数据结构、遵循最佳实践和编码规范。
+                    需求：对上述 {language} 代码给出优化建议，以提高其性能、可读性和维护性。关注点包括：减少冗余代码、改进算法复杂度、使用更高效的数据结构、遵循最佳实践和编码规范。
                     """
     })
     response = requests.post(zhipu_url, headers=headers, json=data)
@@ -60,6 +62,7 @@ def ai_optimize_code(class_content, class_path, zhipu_url, headers, data):
     with open(class_path, 'w', encoding='utf-8') as file:
         file.write(ai_code)
     data['messages'].clear()
+    return ai_code
 
 def ai_learn_writing_code_and_write_junit_test():
     config = get_config()
@@ -86,15 +89,17 @@ def ai_learn_writing_code_and_write_junit_test():
         if len(class_content) > 6000:
             print(f'文件内容超过6000, 跳过: {class_path}')
             continue
-        data['model'] = zhipu_model2
-        ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
         if check_entity_class_path(class_path):
-            print(f'该类是实体类, 跳过: {class_path}')
+            print(f'该类是实体类, 只写注释')
+            data['model'] = zhipu_model2
+            ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
             continue
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         data['model'] = zhipu_model2
-        class_content = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
+        class_content_optimize = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
         print(f'优化完成为优化后的代码写注释')
+        data['model'] = zhipu_model2
+        ai_writing_comments(class_content_optimize, class_path, zhipu_url, headers, data)
         messages.clear()
         data['model'] = zhipu_model1
         if len(need_upload_file_list) > 0:

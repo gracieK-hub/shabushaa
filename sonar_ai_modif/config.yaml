@@ -18,7 +18,7 @@ PROJECT_INFO:
   key: "cnv-front-schedule-java-service-develop"
   token: "0d4784d7430dae414d7b9365149285f29150d9ca"
   local_path: "D:\\ideaCode\\company\\gitCode\\sonarCode\\cnv-front-schedule-java-service"
-  language: "java"
+  language: "java8"
   test_framework: "junit4"
 
 ZHIPU:
