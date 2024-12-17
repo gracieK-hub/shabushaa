@@ -94,6 +94,7 @@ def ai_learn_writing_code_and_write_junit_test():
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         data['model'] = zhipu_model2
         class_content = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
+        print(f'优化完成为优化后的代码写注释')
         messages.clear()
         data['model'] = zhipu_model1
         if len(need_upload_file_list) > 0:
