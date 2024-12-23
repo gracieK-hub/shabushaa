@@ -8,7 +8,7 @@ def ai_writing_comments(class_content, class_path, zhipu_url, headers, data):
     data['messages'].append({
                 "role": "user",
                 "content": f"""{class_content}
-                将上述代码添加丰富的中文注释, 代码注释率要达到90%以上, 不要省略掉任何代码, 不要遗漏任何一行代码, 我需要直接编译, 原来的代码不能被删除或者省略, 
+                将上述代码添加丰富的中文注释, 代码注释率要达到90%以上, 不要省略掉任何代码, 不要遗漏任何一行代码, 不要改变原有的名称属性，自作主张修改结构, 原来的代码不能被删除或者省略, 
                 只返回给我代码, 不要你额外的解释, 只返回给我代码.
                 """
             })
@@ -19,8 +19,8 @@ def ai_writing_comments(class_content, class_path, zhipu_url, headers, data):
     data['messages'].clear()
 
 def check_entity_class_path(class_path):
-    keywords = ['entity', 'req', 'resp', 'model']
-    class_path_constitute_check = class_path.split(os.path.sep)
+    keywords = ['entity', 'req', 'resp', 'model', 'pojo', 'vo', 'dto', 'enums', 'enum', 'dao', 'mapper']
+    class_path_constitute_check = class_path.split('\\')
     for keyword in keywords:
         for part in class_path_constitute_check:
             if keyword == part:
@@ -36,8 +36,8 @@ def ai_optimize_code(class_content, class_path, zhipu_url, headers, data):
     data['messages'].append({
         "role": "user",
         "content": f"""{class_content}
-                    需求：对上述 {language} 代码给出优化建议，以提高其性能、可读性和维护性。
-                    关注点包括：减少冗余代码、改进算法复杂度、使用更高效的数据结构、遵循最佳实践和编码规范。
+                    需求：对上述{language}代码给出优化建议，以提高其性能、可读性和维护性。
+                    关注点包括：减少冗余代码、不改变任何参数变量命名、改进算法复杂度、使用更高效的数据结构、遵循最佳实践和编码规范。
                     """
     })
     response = requests.post(zhipu_url, headers=headers, json=data)
@@ -91,16 +91,15 @@ def ai_learn_writing_code_and_write_junit_test():
             print(f'文件内容超过6000, 跳过: {class_path}')
             continue
         if check_entity_class_path(class_path):
-            print(f'该类是实体类, 只写注释')
-            data['model'] = zhipu_model2
-            ai_writing_comments(class_content, class_path, zhipu_url, headers, data)
+            print(f'该类是实体类, 直接跳过吧, ai喜欢改名字 不听话')
             continue
         need_upload_file_list = check_file_content_get_import_java_path(class_content, class_list, class_path)
         data['model'] = zhipu_model1
         class_content_optimize = ai_optimize_code(class_content, class_path, zhipu_url, headers, data)
-        print(f'优化完成, 为优化后的代码写注释')
+        print(f'优化完成')
         data['model'] = zhipu_model2
         ai_writing_comments(class_content_optimize, class_path, zhipu_url, headers, data)
+        print(f'注释完成')
         messages.clear()
         print(f'开始写单元测试')
         data['model'] = zhipu_model1
