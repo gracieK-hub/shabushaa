@@ -1,0 +1,5 @@
+[database]
+url="mongodb://192.168.66.26:27017"
+username="root"
+password="shenmemima"
+schema="sonar"

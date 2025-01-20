@@ -24,6 +24,8 @@ PROJECT_INFO:
 ZHIPU:
   url: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 #  token: "ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn"
-  token: "4da188ece32381d716e1b33c9c0b3e87.x0a5qkTcxHTbK1mK"
+#  token: "4da188ece32381d716e1b33c9c0b3e87.x0a5qkTcxHTbK1mK"
+  token: "0ea251ee9df4ae07bd12da6ff39dd2d0.AHMt5YPEjtwKbzLg"
   model1: "glm-4-plus"
   model2: "glm-4-air"
+  model3: "GLM-4-Long"
