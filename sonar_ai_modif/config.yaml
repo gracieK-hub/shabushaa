@@ -17,15 +17,14 @@ LOCAL_SERVER:
 PROJECT_INFO:
   key: "cnv-front-schedule-java-service-develop"
   token: "0d4784d7430dae414d7b9365149285f29150d9ca"
-  local_path: "D:\\ideaCode\\company\\gitCode\\sonarCode\\cnv-front-schedule-java-service"
+  local_path: "D:\\ideaCode\\company\\gitCode\\sonarCode\\cnv-front-schedule-java-service\\src\\main\\java\\com\\unitechs\\wisdom"
   language: "Java 8"
   test_framework: "junit4"
 
 ZHIPU:
   url: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-#  token: "ea0ab6b243bfec4f56d9f8d880780a44.nttX3gepmAC3ZTSn"
-#  token: "4da188ece32381d716e1b33c9c0b3e87.x0a5qkTcxHTbK1mK"
-  token: "0ea251ee9df4ae07bd12da6ff39dd2d0.AHMt5YPEjtwKbzLg"
+  token: "8d8b6462c10c4005ad8230251156aef7.AjPjqvwzZRpkzeww"
+#  token: "0ea251ee9df4ae07bd12da6ff39dd2d0.AHMt5YPEjtwKbzLg"
   model1: "glm-4-plus"
   model2: "glm-4-air"
   model3: "GLM-4-Long"
